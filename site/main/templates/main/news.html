@@ -1,0 +1,116 @@
+{% extends 'main/layot.html' %}
+
+{% block title %}Новости{% endblock %}
+
+{% block content %}
+    <h1 style="text-align: center; color: #333;">Лента новостей</h1>
+    <ul style="list-style: none; padding: 0;">
+        {% for item in news %}
+            <li style="border: 1px solid #ddd; padding: 20px; margin: 20px 0; border-radius: 10px; background-color: #f9f9f9; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                <h3 style="margin-top: 0; color: #007bff;">{{ item.title }}</h3>
+                
+                {% if item.images %}
+                    <div style="margin: 10px 0;">
+                        {% for image in item.images.all %}
+                            <img src="{{ image.image.url }}" alt="{{ item.title }}" style="max-width: 150px; height: auto; border-radius: 10px; cursor: pointer;" onclick="openModal('{{ image.image.url }}')">
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                {% if item.audios.count > 0 %}
+                    <div style="margin: 10px 0; display: flex; flex-direction: column;">
+                        {% for audio in item.audios.all %}
+                            <div style="margin-bottom: 10px; display: flex; align-items: center;">
+                                <audio id="audio-{{ forloop.counter }}" controls style="flex-grow: 1; max-width: 200px;">
+                                    <source src="{{ audio.audio.url }}" type="audio/mpeg">
+                                    Ваш браузер не поддерживает аудиоплеер.
+                                </audio>
+                                <input type="range" id="volume-{{ forloop.counter }}" min="0" max="1" step="0.1" value="1" onchange="setVolume({{ forloop.counter }}, this.value);" style="margin-left: 10px; width: 100px;">
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                
+                <div id="postContent-{{ forloop.counter }}" style="overflow: hidden; max-height: {% if item.content|length > 100 %}100px{% else %}none{% endif %}; transition: max-height 0.3s ease;">
+                    <p style="margin: 10px 0; font-size: 14px; color: #555;">{{ item.content }}</p>
+                </div>
+
+                {% if item.content|length > 100 %}
+                    <button onclick="toggleReadMore({{ forloop.counter }})" style="background-color: #007bff; color: white; border: none; border-radius: 5px; padding: 5px 10px; cursor: pointer;">
+                        <span id="readMoreText-{{ forloop.counter }}">Читать дальше</span>
+                    </button>
+                {% endif %}
+                
+                <p style="font-size: 12px; color: #888;"><em>Опубликовано: {{ item.published_date }}</em></p>
+                
+                <!-- Кнопки лайков и дизлайков -->
+                <div style="margin-top: 10px;">
+                    <button id="likeButton-{{ forloop.counter }}" onclick="toggleLike({{ forloop.counter }})" style="background: none; border: none; cursor: pointer;">
+                        <i id="likeIcon-{{ forloop.counter }}" class="fa fa-thumbs-up" style="font-size: 20px; color: #007bff;"></i>
+                    </button>
+                    <span id="likeCount-{{ forloop.counter }}">0</span>
+                    <button id="dislikeButton-{{ forloop.counter }}" onclick="toggleDislike({{ forloop.counter }})" style="background: none; border: none; cursor: pointer;">
+                        <i id="dislikeIcon-{{ forloop.counter }}" class="fa fa-thumbs-down" style="font-size: 20px; color: #dc3545;"></i>
+                    </button>
+                    <span id="dislikeCount-{{ forloop.counter }}">0</span>
+                </div>
+            </li>
+        {% empty %}
+            <li style="text-align: center; color: #888;">Нет новостей для отображения.</li>
+        {% endfor %}
+    </ul>
+
+    <!-- Модальное окно для отображения изображения -->
+    <div id="imageModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background-color:rgba(0,0,0,0.8); z-index:1000; justify-content:center; align-items:center;">
+        <span style="color:white; font-size:30px; position:absolute; top:20px; right:30px; cursor:pointer;" onclick="closeModal()">×</span>
+        <img id="modalImage" src="" alt="Full size" style="max-width:90%; max-height:90%; margin:auto; display:block;">
+    </div>
+
+    <script>
+        function openModal(imageUrl) {
+            document.getElementById('modalImage').src = imageUrl;
+            document.getElementById('imageModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('imageModal').style.display = 'none';
+        }
+
+        function toggleReadMore(postIndex) {
+            const contentDiv = document.getElementById(`postContent-${postIndex}`);
+            const readMoreText = document.getElementById(`readMoreText-${postIndex}`);
+            
+            if (contentDiv.style.maxHeight === "100px") {
+                contentDiv.style.maxHeight = "none"; // Разворачиваем текст
+                readMoreText.innerText = "Свернуть"; // Меняем текст кнопки
+            } else {
+                contentDiv.style.maxHeight = "100px"; // Сворачиваем текст
+                readMoreText.innerText = "Читать дальше"; // Меняем текст кнопки
+            }
+        }
+
+        function setVolume(audioIndex, volume) {
+            const audioElement = document.getElementById(`audio-${audioIndex}`);
+            if (audioElement) {
+                audioElement.volume = volume; // Устанавливаем громкость
+            }
+        }
+
+        // Обработчики для лайков и дизлайков
+        const likes = {};
+        const dislikes = {};
+
+        function toggleLike(postIndex) {
+            likes[postIndex] = (likes[postIndex] || 0) + 1;
+            document.getElementById(`likeCount-${postIndex}`).innerText = likes[postIndex];
+        }
+
+        function toggleDislike(postIndex) {
+            dislikes[postIndex] = (dislikes[postIndex] || 0) + 1;
+            document.getElementById(`dislikeCount-${postIndex}`).innerText = dislikes[postIndex];
+        }
+    </script>
+
+    <!-- Подключение Font Awesome для иконок -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+{% endblock %}

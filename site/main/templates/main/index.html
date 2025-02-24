@@ -1,0 +1,417 @@
+{% extends 'main/layot.html' %}
+
+{% block title %}Главная{% endblock %}
+
+{% block content %}
+    <div class="features">
+        <!--<button class="about-button">На страницу про нас</button>-->
+    </div>
+
+    <!-- Слайдер -->
+    <div class="slider-container">
+        <div id="imageCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
+            <div class="carousel-inner">
+                {% for slider_image in slider_images %}
+                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                        <img src="{{ slider_image.image.url }}" class="d-block w-100" alt="{{ slider_image.title }}" style="max-height: 300px; object-fit: cover;">
+                    </div>
+                {% endfor %}
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#imageCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Предыдущий</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#imageCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Следующий</span>
+            </button>
+            
+            <!-- Индикаторы (точки) -->
+            <div class="carousel-indicators">
+                {% for slider_image in slider_images %}
+                    <button type="button" data-bs-target="#imageCarousel" data-bs-slide-to="{{ forloop.counter0 }}" class="{% if forloop.first %}active{% endif %}" aria-current="{% if forloop.first %}true{% endif %}" aria-label="Слайд {{ forloop.counter }}"></button>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+   <div class="news-section">
+    <h3>Новинки</h3>
+    <ul class="news-list">
+        {% for item in news %}
+        <li class="news-item" onclick="openModal('{{ item.images.first.image.url }}', '{{ item.content|escapejs }}', {{ item.audios.count }}, '{% for audio in item.audios.all %}{{ audio.audio.url }}{% if not forloop.last %}|{% endif %}{% endfor %}', '{{ item.book_code }}')">            
+            {% if item.images.count > 0 %}
+                <div class="news-image">
+                    {% for image in item.images.all %}
+                        <img src="{{ image.image.url }}" alt="{{ item.title }}" class="img-fluid" style="border-radius: 10px; cursor: pointer;">
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            <h3 class="news-title" style="color:#003456;">{{ item.title }}</h3>
+            <p class="news-author">Автор: {{ item.author }}</p>
+            
+            {% if item.book_type == '🎧Аудио' %}  <!-- Условие для проверки типа книги -->
+                <p class="news-reader">Чтец: {{ item.reader }}</p> <!-- Отображение чтеца только для аудиокниг -->
+            {% endif %}
+            
+            <p class="news-date">{{ item.published_date|date:"d.m.Y" }}</p> 
+            <p class="news-type oval">{{ item.book_type }}</p>  
+        </li>
+        {% empty %}
+            <li style="text-align: center; color: #888;">Нет новостей для отображения.</li>
+        {% endfor %}
+    </ul>
+</div>
+<div id="imageModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background-color:rgba(0, 0, 0, 0.5); backdrop-filter: blur(10px); z-index:1000; justify-content:center; align-items:flex-start;">
+    <div style="background-color: white; border-radius: 15px; padding: 20px; max-width: 95%; width: 100%; box-shadow: 0 4px 20px rgba(0,0,0,0.2); overflow: hidden; position: relative; margin-top: 20px;">
+        <span style="color:black; font-size:30px; position:absolute; top:10px; right:10px; cursor:pointer;" onclick="closeModal()">×</span>
+        <div id="modalContentWrapper" style="display: flex; align-items: stretch; padding-top: 20px;">
+            <img id="modalImage" src="" alt="Full size" style="flex: 1; max-height: 80vh; max-width: 100%; object-fit: contain; margin-right: 20px;">
+            <div id="modalText" style="flex: 1; color: black; padding: 10px; overflow-y: auto; max-height: 80vh;">
+                <div id="modalContent" style="margin: 0; white-space: pre;"></div>
+                <div id="audioControls" style="margin-top: 10px;"></div> <!-- Контейнер для кнопки воспроизведения -->
+                <div id="modalBookCode" style="color: #3a3a3a; margin-top: 10px; font-size: small; padding: 10px; border: 1px solid #007bff; border-radius: 5px; background-color: #f0f8ff; display: inline-block;">
+                    Код: <span id="bookCode"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Адаптивность для мобильных устройств */
+    @media (max-width: 768px) {
+        #modalContentWrapper {
+            flex-direction: column; /* Изменяем порядок для мобильных устройств */
+            align-items: center; /* Центрируем элементы */
+            max-height: 80vh; /* Ограничиваем высоту родительского контейнера */
+            overflow-y: auto; /* Добавляем прокрутку */
+        }
+        #modalImage {
+            max-height: 50vh; /* Уменьшаем высоту изображения на мобильных устройствах */
+            width: 100%; /* Устанавливаем ширину изображения на 100% */
+            margin-bottom: 10px; /* Добавляем отступ снизу */
+        }
+        #modalText {
+            text-align: left; /* Убираем центрирование текста */
+            width: 100%; /* Устанавливаем ширину текста на 100% */
+            padding: 10px; /* Увеличиваем отступ для текста */
+        }
+    }
+</style>
+<div id="imageModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background-color:rgba(0, 0, 0, 0.5); backdrop-filter: blur(10px); z-index:1000; justify-content:center; align-items:flex-start;">
+    <div style="background-color: white; border-radius: 15px; padding: 20px; max-width: 95%; width: 100%; box-shadow: 0 4px 20px rgba(0,0,0,0.2); overflow: hidden; position: relative; margin-top: 20px;">
+        <span style="color:black; font-size:30px; position:absolute; top:10px; right:10px; cursor:pointer;" onclick="closeModal()">×</span>
+        <div id="modalContentWrapper" style="display: flex; align-items: flex-start; padding-top: 20px; width: 100%; box-sizing: border-box;">
+            <img id="modalImage" src="" alt="Full size" style="flex: 1; max-height: 50vh; max-width: 50%; object-fit: contain; margin-right: 20px;">
+            <div id="modalText" style="flex: 1; color: black; padding: 10px; box-sizing: border-box; word-wrap: break-word; overflow-wrap: break-word; word-break: break-all; white-space: normal;">
+                <div id="modalContent" style="margin: 0; width: 100%; overflow-wrap: break-word; word-break: break-all; white-space: normal;">
+                    Это пример текста, который будет автоматически переноситься на следующую строку, чтобы проверить функциональность. Попробуйте добавить длинные слова, такие как "длиннословосоставляющее", чтобы убедиться, что перенос работает.
+                </div>
+                <div id="audioControls" style="margin-top: 10px;"></div>
+                <div id="modalBookCode" style="color: #3a3a3a; margin-top: 10px; font-size: small; padding: 10px; border: 1px solid #007bff; border-radius: 5px; background-color: #f0f8ff; display: inline-block;">
+                    Код: <span id="bookCode"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Адаптивность для мобильных устройств */
+    @media (max-width: 768px) {
+        #modalContentWrapper {
+            flex-direction: column; /* Изменяем порядок для мобильных устройств */
+            align-items: center; /* Центрируем элементы */
+            width: 100%; /* Ширина родительского контейнера */
+        }
+        #modalImage {
+            max-height: 50vh; /* Уменьшаем высоту изображения на мобильных устройствах */
+            width: 100%; /* Устанавливаем ширину изображения на 100% */
+            margin-bottom: 10px; /* Добавляем отступ снизу */
+        }
+        #modalText {
+            flex: 1;
+            color: black;
+            padding: 10px;
+            overflow: hidden; /* Убираем прокрутку */
+            width: 100%; /* Ширина текстового контейнера */
+            box-sizing: border-box; /* Учитываем padding в ширине */
+            word-wrap: break-word; /* Перенос длинных слов */
+            overflow-wrap: break-word; /* Обеспечивает перенос длинных слов */
+            word-break: break-all; /* Перенос слов */
+            white-space: normal; /* Автоматический перенос текста */
+        }
+    }
+</style>
+
+<script>
+    let isPlaying = false; // Для отслеживания состояния воспроизведения
+    let audioElements = []; // Массив для хранения объектов Audio
+    let currentAudioIndex = 0; // Индекс текущего аудио
+    let totalDuration = 0; // Общее время всех аудио
+
+    function openModal(imageUrl, content, hasAudio, audioUrls, bookCode) {
+        // Устанавливаем изображение
+        document.getElementById('modalImage').src = imageUrl;
+
+        // Устанавливаем текст с автоматическим переносом
+        const modalContent = document.getElementById('modalContent');
+        modalContent.innerText = content;
+        modalContent.style.whiteSpace = 'normal'; // Автоматический перенос текста
+        modalContent.style.wordWrap = 'break-word'; // Перенос длинных слов
+        modalContent.style.overflowWrap = 'break-word'; // Перенос длинных слов
+
+        // Устанавливаем код книги
+        document.getElementById('bookCode').innerText = bookCode || 'Код не указан';
+
+        // Управление аудио
+        const audioControls = document.getElementById('audioControls');
+        if (hasAudio > 0 && audioUrls) {
+            const audioSources = audioUrls.split("|");
+            audioElements = [];
+            totalDuration = 0; // Сбрасываем общее время
+
+            // Загружаем аудио и вычисляем общее время
+            audioSources.forEach((audioUrl) => {
+                const audio = new Audio(audioUrl);
+                audioElements.push(audio);
+
+                // Обработчик для получения длительности аудио
+                audio.addEventListener('loadedmetadata', () => {
+                    totalDuration += audio.duration; // Добавляем длительность текущего аудио
+                    updateTotalDuration(); // Обновляем отображение общего времени
+                });
+            });
+
+            audioControls.innerHTML = `
+                <button id="playAudioButton" style="padding: 10px 20px; background-color: #ffffff; color: #003456; border: 2px solid #003456; border-radius: 5px; font-weight: bold; cursor: pointer; transition: background-color 0.3s ease, color 0.3s ease;" onclick="toggleAudio()">
+                    Слушать фрагмент (00:00 / ${formatTime(totalDuration)})
+                </button>
+            `;
+        } else {
+            audioControls.innerHTML = ''; // Удаляем кнопку, если аудио отсутствует
+        }
+
+        // Показываем модальное окно
+        document.getElementById('imageModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('imageModal').style.display = 'none';
+        stopAllAudio(); // Останавливаем аудио при закрытии модального окна
+    }
+
+    function toggleAudio() {
+        const playAudioButton = document.getElementById('playAudioButton');
+
+        if (isPlaying) {
+            pauseAllAudio(); // Ставим аудио на паузу
+            playAudioButton.innerText = `Продолжить воспроизведение (${formatTime(getCurrentTime())} / ${formatTime(totalDuration)})`;
+        } else {
+            playAllAudio();
+            playAudioButton.innerText = `Остановить (${formatTime(getCurrentTime())} / ${formatTime(totalDuration)})`;
+            updateTime(playAudioButton); // Запускаем обновление времени
+        }
+    }
+
+    function pauseAllAudio() {
+        audioElements.forEach(audio => {
+            audio.pause(); // Ставим аудио на паузу
+        });
+        isPlaying = false; // Устанавливаем состояние остановки
+    }
+
+    function updateTime(button) {
+        if (!isPlaying) return; // Если воспроизведение остановлено, выходим
+
+        const currentTime = getCurrentTime(); // Текущее время в секундах
+        const remainingTime = totalDuration - currentTime; // Оставшееся время
+
+        button.innerText = `Остановить (${formatTime(currentTime)} / ${formatTime(totalDuration)})`; // Обновляем текст кнопки
+
+        if (isPlaying) {
+            requestAnimationFrame(() => updateTime(button)); // Рекурсивно обновляем время
+        }
+    }
+
+    function playAllAudio() {
+        if (audioElements.length === 0) return; // Если нет аудио, ничего не делаем
+
+        isPlaying = true; // Устанавливаем состояние воспроизведения
+        playAudio(currentAudioIndex); // Воспроизводим текущее аудио
+    }
+
+    function playAudio(index) {
+        if (index >= audioElements.length) {
+            stopAllAudio(); // Если индекс превышает количество аудио, останавливаем
+            return;
+        }
+
+        const audio = audioElements[index];
+        audio.play(); // Воспроизводим аудио
+
+        // Устанавливаем обработчик события завершения
+        audio.onended = function() {
+            playAudio(index + 1); // Воспроизводим следующее аудио
+        };
+    }
+
+    function stopAllAudio() {
+        audioElements.forEach(audio => {
+            audio.pause(); // Останавливаем аудио
+            audio.currentTime = 0; // Сбрасываем время
+        });
+        isPlaying = false; // Устанавливаем состояние остановки
+        currentAudioIndex = 0; // Сбрасываем индекс текущего аудио
+    }
+
+    // Функция для форматирования времени в MM:SS
+    function formatTime(timeInSeconds) {
+        const minutes = Math.floor(timeInSeconds / 60);
+        const seconds = Math.floor(timeInSeconds % 60);
+        return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    // Функция для получения текущего времени воспроизведения
+    function getCurrentTime() {
+        let currentTime = 0;
+        audioElements.forEach((audio, index) => {
+            if (index < currentAudioIndex) {
+                currentTime += audio.duration; // Добавляем длительность уже воспроизведенных аудио
+            } else if (index === currentAudioIndex) {
+                currentTime += audio.currentTime; // Добавляем текущее время текущего аудио
+            }
+        });
+        return currentTime;
+    }
+
+    let modalLikes = 0;
+
+    function toggleModalLike() {
+        modalLikes += 1;
+        const likeCountElement = document.getElementById('modalLikeCount');
+        likeCountElement.innerText = modalLikes; 
+    }
+
+    let likeCounts = {};
+
+    function toggleLike(counter) {
+        if (!(counter in likeCounts)) {
+            likeCounts[counter] = 0; 
+        }
+        likeCounts[counter] += 1;
+
+        const likeCountElement = document.getElementById(`likeCount-${counter}`);
+        likeCountElement.innerText = likeCounts[counter]; 
+    }
+</script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <script>
+        var swiper = new Swiper('.swiper-container', {
+            slidesPerView: 1,
+            spaceBetween: 10,
+            navigation: {
+                nextEl: '.swiper-button-next',
+                prevEl: '.swiper-button-prev',
+            },
+            pagination: {
+                el: '.swiper-pagination',
+                clickable: true,
+            },
+            autoplay: {
+                delay: 3000,
+                disableOnInteraction: false,
+            },
+        });
+    </script>
+
+    <style>
+        /* Стили для адаптивности */
+        .news-list {
+            list-style: none;
+            padding: 0;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+
+        .news-item {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 10px;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            width: calc(25% - 20px);
+            cursor: pointer;
+        }
+
+        .news-image img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+        }
+
+        .news-title {
+            margin-top: 10px;
+            color: #007bff;
+        }
+
+        .news-author {
+            font-size: 14px;
+            color: #555;
+        }
+
+        .news-reader{
+            font-size: 14px;
+            color: #555;
+        }
+
+
+        .news-actions {
+            margin-top: 10px;
+        }
+
+        .news-audio {
+            margin-top: 10px;
+        }
+
+        /* Адаптивность для мобильных устройств */
+              /* Адаптивность для мобильных устройств */
+              @media (max-width: 768px) {
+            .news-item {
+                width: 100%; /* Посты в ленте отобрежаются в столбик */
+                margin-bottom: 20px; /* Отступ между постами */
+            }
+            .news-image img {
+                border-radius: 10px; /* Округление углов изображений */
+            }
+        }
+
+        /* Модальное окно */
+        #imageModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #modalImage {
+            flex: 1;
+            max-height: 80vh;
+            max-width: 100%;
+            object-fit: contain;
+            margin-right: 20px;
+        }
+    </style>
+{% endblock %}
