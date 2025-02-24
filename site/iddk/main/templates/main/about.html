@@ -1,0 +1,14 @@
+{% extends 'main/layot.html' %}
+
+{% block title %}Про нас{% endblock %}
+
+{% block content %}
+<div class="features">
+    <h2>О нас</h2>
+    {% if about %}
+        <p>{{ about.content | linebreaks}}</p>  <!-- Отображение текста из модели -->
+    {% else %}
+        <p>Информация о нас отсутствует.</p>
+    {% endif %}
+</div>
+{% endblock %}

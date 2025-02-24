@@ -1,0 +1,15 @@
+{% extends 'main/layot.html' %}
+
+{% block title %}Авторам{% endblock %}
+
+{% block content %}
+<div class="features">
+    <h2>Авторам</h2>
+    {% if authors %}
+        <p>{{ authors.content|linebreaks }}</p>  <!-- Применение фильтра linebreaks -->
+    {% else %}
+        <p>Информация для авторов отсутствует.</p>
+    {% endif %}
+    <button class="about-button">На страницу про нас</button>
+</div>
+{% endblock %}
